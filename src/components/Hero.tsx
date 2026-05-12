@@ -1,27 +1,38 @@
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
-import logo from "@/assets/obsidian-logo.png";
-import p1 from "@/assets/project-1.jpg";
-import p2 from "@/assets/project-2.jpg";
-import p3 from "@/assets/project-3.jpg";
+import m1 from "@/assets/mockup-1.jpg";
+import m2 from "@/assets/mockup-2.jpg";
+import m3 from "@/assets/mockup-3.jpg";
+
+const features = [
+  { label: "Carousel Ads" },
+  { label: "AI Visuals" },
+  { label: "Premium Design" },
+];
 
 export function Hero() {
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-32 pb-20">
-      {/* Background */}
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-36 pb-20">
       <div className="absolute inset-0 -z-10">
-        <img src={heroBg} alt="" width={1920} height={1280} className="absolute inset-0 h-full w-full object-cover opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
-        <div className="absolute inset-0 grid-bg opacity-40" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 h-[500px] w-[800px] bg-glow animate-pulse-glow" />
+        <img
+          src={heroBg}
+          alt=""
+          width={1920}
+          height={1280}
+          className="absolute inset-0 h-full w-full object-cover opacity-50"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+        <div className="absolute inset-0 grid-bg opacity-30" />
+        <div className="absolute top-1/3 left-[10%] h-[500px] w-[600px] bg-glow animate-pulse-glow" />
+        <div className="absolute bottom-0 right-0 h-[500px] w-[600px] bg-glow opacity-60 animate-pulse-glow" style={{ animationDelay: "2s" }} />
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-16 items-center w-full">
+      <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center w-full">
         {/* Text */}
-        <div>
+        <div className="lg:col-span-7">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -41,7 +52,10 @@ export function Hero() {
             <span className="text-silver">Visuals That</span>
             <br />
             <span className="text-silver">Build </span>
-            <span className="italic font-light text-primary" style={{ textShadow: "0 0 40px oklch(0.7 0.22 245 / 0.6)" }}>
+            <span
+              className="italic font-light text-primary"
+              style={{ textShadow: "0 0 40px oklch(0.7 0.22 245 / 0.6)" }}
+            >
               Brands.
             </span>
           </motion.h1>
@@ -70,61 +84,126 @@ export function Hero() {
               <span className="transition-transform group-hover:translate-x-1">→</span>
             </button>
             <button
-              onClick={() => scrollTo("contact")}
+              onClick={() => scrollTo("portfolio")}
               className="inline-flex items-center gap-3 rounded-full border border-border bg-card/40 backdrop-blur px-7 py-3.5 text-sm tracking-wide text-foreground hover:border-primary/60 hover:bg-card transition-all"
             >
-              Start a Project
+              Explore Portfolio
             </button>
           </motion.div>
 
-          <div className="mt-14 flex items-center gap-8 text-xs tracking-[0.2em] uppercase text-muted-foreground">
-            <div><span className="text-silver-bright text-2xl font-display">120+</span><div className="mt-1">Campaigns</div></div>
-            <div className="h-10 w-px bg-border" />
-            <div><span className="text-silver-bright text-2xl font-display">40+</span><div className="mt-1">Brands</div></div>
-            <div className="h-10 w-px bg-border" />
-            <div><span className="text-silver-bright text-2xl font-display">5★</span><div className="mt-1">Rated</div></div>
-          </div>
+          {/* Minimal feature cards (replaces fake stats) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.55 }}
+            className="mt-14 flex flex-wrap gap-3"
+          >
+            {features.map((f) => (
+              <div
+                key={f.label}
+                className="flex items-center gap-2.5 rounded-full border border-border bg-card/40 backdrop-blur px-4 py-2"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                <span className="text-xs tracking-[0.2em] uppercase text-silver">{f.label}</span>
+              </div>
+            ))}
+          </motion.div>
         </div>
 
-        {/* Floating mockups */}
-        <div className="relative h-[520px] lg:h-[620px] hidden lg:block">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="absolute inset-0"
-          >
-            <img src={logo} alt="" aria-hidden width={400} height={400}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] opacity-20 blur-sm" />
-
-            <FloatingCard src={p2} alt="AI skincare carousel" className="left-2 top-4 w-52 -rotate-6" delay={0.4} />
-            <FloatingCard src={p1} alt="Luxury fashion carousel" className="left-1/2 -translate-x-1/2 top-20 w-64 z-10 rotate-2" delay={0.55} featured />
-            <FloatingCard src={p3} alt="Automotive ad carousel" className="right-0 top-40 w-52 rotate-6" delay={0.7} />
-
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 glass rounded-2xl px-5 py-3 flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs tracking-[0.25em] uppercase text-muted-foreground">Premium Carousel Ads</span>
-            </div>
-          </motion.div>
+        {/* Stacked carousel mockups */}
+        <div className="lg:col-span-5 relative h-[480px] sm:h-[560px] lg:h-[640px] hidden md:block">
+          <CarouselStack mockups={[m1, m2, m3]} />
         </div>
       </div>
     </section>
   );
 }
 
-function FloatingCard({
-  src, alt, className, delay, featured,
-}: { src: string; alt: string; className: string; delay: number; featured?: boolean }) {
+function CarouselStack({ mockups }: { mockups: string[] }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="absolute inset-0 flex items-center justify-center"
+    >
+      {/* glow halo */}
+      <div className="absolute inset-0 bg-glow" />
+
+      {/* back card */}
+      <Card src={mockups[2]} className="-rotate-[10deg] -translate-x-24 translate-y-4 z-0 opacity-70" delay={0.5} />
+      {/* mid card */}
+      <Card src={mockups[1]} className="rotate-[8deg] translate-x-24 -translate-y-2 z-10 opacity-90" delay={0.6} />
+      {/* front card */}
+      <Card src={mockups[0]} className="rotate-0 z-20" delay={0.7} featured />
+
+      {/* tiny floating UI chip top */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1, duration: 0.6 }}
+        className="absolute top-4 right-2 glass rounded-xl px-3 py-2 z-30"
+      >
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">Slide 01 / 06</span>
+        </div>
+      </motion.div>
+
+      {/* dots */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1, duration: 0.6 }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 glass rounded-full px-4 py-2 flex items-center gap-2 z-30"
+      >
+        <span className="h-1.5 w-6 rounded-full bg-primary" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+      </motion.div>
+
+      {/* engagement chip */}
+      <motion.div
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.2, duration: 0.6 }}
+        className="absolute bottom-20 -right-2 glass rounded-xl px-3 py-2 z-30 hidden lg:flex items-center gap-2"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="oklch(0.7 0.18 245)" stroke="oklch(0.7 0.18 245)" strokeWidth="1.5">
+          <path d="M12 21s-7-4.5-9.5-9C.5 8 3 4 7 4c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4 4.5 8-2.5 4.5-9.5 9-9.5 9z" strokeLinejoin="round" />
+        </svg>
+        <span className="text-[10px] tracking-[0.2em] uppercase text-silver">CTR +38%</span>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Card({
+  src,
+  className,
+  delay,
+  featured,
+}: {
+  src: string;
+  className: string;
+  delay: number;
+  featured?: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, delay, ease: [0.22, 1, 0.36, 1] }}
       className={`absolute ${className}`}
     >
-      <div className={`animate-float rounded-2xl overflow-hidden border border-border bg-card shadow-elegant ${featured ? "glow-blue" : ""}`}
-        style={{ animationDelay: `${delay}s` }}>
-        <img src={src} alt={alt} width={520} height={650} className="block w-full aspect-[4/5] object-cover" />
+      <div
+        className={`animate-float w-[200px] sm:w-[230px] aspect-[9/16] rounded-3xl overflow-hidden border border-border bg-card shadow-elegant ${
+          featured ? "glow-blue" : ""
+        }`}
+        style={{ animationDelay: `${delay}s` }}
+      >
+        <img src={src} alt="" width={460} height={820} className="block h-full w-full object-cover" />
       </div>
     </motion.div>
   );

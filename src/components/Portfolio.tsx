@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import p1 from "@/assets/project-1.jpg";
-import p2 from "@/assets/project-2.jpg";
-import p3 from "@/assets/project-3.jpg";
+import p1 from "@/assets/mockup-1.jpg";
+import p2 from "@/assets/mockup-2.jpg";
+import p3 from "@/assets/mockup-3.jpg";
 
 export type Project = {
   title: string;
