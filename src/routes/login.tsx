@@ -18,15 +18,17 @@ const schema = z.object({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/admin" });
-  }, [user, loading, navigate]);
+    // Only auto-redirect signed-in admins to the dashboard. Non-admins stay
+    // on /login so they aren't bounced to / by the admin guard.
+    if (!loading && user && isAdmin) navigate({ to: "/admin" });
+  }, [user, isAdmin, loading, navigate]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
