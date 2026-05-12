@@ -32,15 +32,13 @@ function AdminPage() {
       return;
     }
     if (!isAdmin) {
-      // Signed in but not an admin — bounce to home (do not force sign-out
-      // so transient role-check failures can't lock a real admin out).
-      navigate({ to: "/" });
+      navigate({ to: "/login" });
     }
   }, [user, isAdmin, loading, navigate]);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects", "admin"],
-    enabled: !!user,
+    enabled: !loading && !!user && isAdmin,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")

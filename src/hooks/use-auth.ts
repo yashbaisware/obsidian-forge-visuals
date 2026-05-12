@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,58 +12,69 @@ export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const lastCheckedUid = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    let requestId = 0;
 
-    const checkAdmin = async (uid: string | null) => {
-      if (!uid) {
-        if (!cancelled) {
-          setIsAdmin(false);
-          lastCheckedUid.current = null;
-        }
-        return;
-      }
-      const { data } = await supabase
+    const fetchAdminRole = async (uid: string) => {
+      const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", uid)
         .eq("role", "admin")
         .maybeSingle();
-      if (cancelled) return;
-      lastCheckedUid.current = uid;
-      setIsAdmin(!!data);
+      if (error) {
+        console.warn("Admin role check failed", error.message);
+        return false;
+      }
+      return !!data;
     };
 
-    const applySession = async (sessionUser: User | null, initial = false) => {
+    const hydrateAuth = async (sessionUser: User | null) => {
+      const currentRequest = ++requestId;
+      if (cancelled) return;
+
       setUser(sessionUser);
-      // Keep loading true until role check resolves so consumers don't
-      // act on a half-known auth state.
-      if (initial) setLoading(true);
-      await checkAdmin(sessionUser?.id ?? null);
-      if (initial && !cancelled) setLoading(false);
+      setLoading(true);
+
+      if (!sessionUser) {
+        if (!cancelled && currentRequest === requestId) {
+          setIsAdmin(false);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const admin = await fetchAdminRole(sessionUser.id);
+      if (cancelled || currentRequest !== requestId) return;
+
+      setUser(sessionUser);
+      setIsAdmin(admin);
+      setLoading(false);
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       const nextUser = session?.user ?? null;
       setUser(nextUser);
-      // Re-check role for the new user; mark loading during the check
-      // so /admin doesn't prematurely treat the user as non-admin.
-      if (nextUser && lastCheckedUid.current !== nextUser.id) {
-        setLoading(true);
-        checkAdmin(nextUser.id).finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-      } else if (!nextUser) {
-        setIsAdmin(false);
-        lastCheckedUid.current = null;
-      }
+      setLoading(true);
+      setTimeout(() => {
+        void hydrateAuth(nextUser);
+      }, 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      applySession(session?.user ?? null, true);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        void hydrateAuth(session?.user ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUser(null);
+          setIsAdmin(false);
+          setLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;

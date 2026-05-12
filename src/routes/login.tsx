@@ -22,13 +22,23 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [pendingRedirect, setPendingRedirect] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     // Only auto-redirect signed-in admins to the dashboard. Non-admins stay
     // on /login so they aren't bounced to / by the admin guard.
-    if (!loading && user && isAdmin) navigate({ to: "/admin" });
-  }, [user, isAdmin, loading, navigate]);
+    if (loading) return;
+    if (user && isAdmin) {
+      navigate({ to: "/admin" });
+      return;
+    }
+    if (pendingRedirect && user && !isAdmin) {
+      setError("Unauthorized Access");
+      setPendingRedirect(false);
+      void supabase.auth.signOut();
+    }
+  }, [user, isAdmin, loading, pendingRedirect, navigate]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -42,7 +52,7 @@ function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword(parsed.data);
       if (error) throw error;
-      navigate({ to: "/admin" });
+      setPendingRedirect(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
