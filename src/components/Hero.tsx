@@ -87,7 +87,7 @@ export function Hero() {
               onClick={() => scrollTo("portfolio")}
               className="inline-flex items-center gap-3 rounded-full border border-border bg-card/40 backdrop-blur px-7 py-3.5 text-sm tracking-wide text-foreground hover:border-primary/60 hover:bg-card transition-all"
             >
-              Explore Portfolio
+              Explore Work
             </button>
           </motion.div>
 
