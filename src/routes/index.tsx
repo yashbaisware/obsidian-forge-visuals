@@ -1,26 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/Navbar";
+import { Hero } from "@/components/Hero";
+import { Portfolio } from "@/components/Portfolio";
+import { About } from "@/components/About";
+import { Contact } from "@/components/Contact";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Obsidian Creative — Visuals That Build Brands" },
+      {
+        name: "description",
+        content:
+          "Obsidian Creative designs premium carousel ads and AI-powered visuals for modern brands and digital campaigns.",
+      },
+      { property: "og:title", content: "Obsidian Creative — Visuals That Build Brands" },
+      {
+        property: "og:description",
+        content:
+          "Premium carousel ads, AI creatives and high-end social media design for ambitious modern brands.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <main className="dark min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      <Portfolio />
+      <About />
+      <Contact />
+      <Footer />
+    </main>
+  );
 }
