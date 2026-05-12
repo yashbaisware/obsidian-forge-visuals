@@ -32,8 +32,9 @@ function AdminPage() {
       return;
     }
     if (!isAdmin) {
-      // Signed in but not an admin — sign out and bounce to home
-      supabase.auth.signOut().finally(() => navigate({ to: "/" }));
+      // Signed in but not an admin — bounce to home (do not force sign-out
+      // so transient role-check failures can't lock a real admin out).
+      navigate({ to: "/" });
     }
   }, [user, isAdmin, loading, navigate]);
 
