@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import p1 from "@/assets/project-1.jpg";
-import p2 from "@/assets/project-2.jpg";
-import p3 from "@/assets/project-3.jpg";
+import p1 from "@/assets/mockup-1.jpg";
+import p2 from "@/assets/mockup-2.jpg";
+import p3 from "@/assets/mockup-3.jpg";
 
 export type Project = {
   title: string;
@@ -66,7 +66,7 @@ export function Portfolio() {
               transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="group relative text-left rounded-3xl overflow-hidden border border-border bg-card hover:border-primary/40 transition-all"
             >
-              <div className="relative aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-[3/4] overflow-hidden">
                 <img
                   src={p.image}
                   alt={p.title}
