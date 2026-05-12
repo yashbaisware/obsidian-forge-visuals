@@ -60,10 +60,12 @@ function AdminPage() {
     navigate({ to: "/" });
   };
 
-  if (loading || !user) {
+  if (loading || !user || !isAdmin) {
     return (
       <main className="dark min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-muted-foreground text-sm tracking-widest">Loading…</div>
+        <div className="text-muted-foreground text-sm tracking-widest">
+          {loading ? "Loading…" : "Unauthorized Access — redirecting…"}
+        </div>
       </main>
     );
   }
