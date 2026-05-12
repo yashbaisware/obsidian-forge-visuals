@@ -26,8 +26,16 @@ function AdminPage() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [user, loading, navigate]);
+    if (loading) return;
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (!isAdmin) {
+      // Signed in but not an admin — sign out and bounce to home
+      supabase.auth.signOut().finally(() => navigate({ to: "/" }));
+    }
+  }, [user, isAdmin, loading, navigate]);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects", "admin"],
@@ -52,10 +60,12 @@ function AdminPage() {
     navigate({ to: "/" });
   };
 
-  if (loading || !user) {
+  if (loading || !user || !isAdmin) {
     return (
       <main className="dark min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-muted-foreground text-sm tracking-widest">Loading…</div>
+        <div className="text-muted-foreground text-sm tracking-widest">
+          {loading ? "Loading…" : "Unauthorized Access — redirecting…"}
+        </div>
       </main>
     );
   }

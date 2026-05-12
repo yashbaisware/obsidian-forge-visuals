@@ -19,7 +19,6 @@ const schema = z.object({
 function LoginPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,16 +38,8 @@ function LoginPage() {
     }
     setBusy(true);
     try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword(parsed.data);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          ...parsed.data,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword(parsed.data);
+      if (error) throw error;
       navigate({ to: "/admin" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
@@ -76,11 +67,9 @@ function LoginPage() {
           </div>
         </Link>
 
-        <h1 className="text-3xl text-silver font-semibold">
-          {mode === "signin" ? "Admin Sign In" : "Create Admin Account"}
-        </h1>
+        <h1 className="text-3xl text-silver font-semibold">Admin Sign In</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Manage your portfolio from a single private dashboard.
+          Restricted access. Authorized administrators only.
         </p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
@@ -118,30 +107,13 @@ function LoginPage() {
             disabled={busy}
             className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3.5 text-sm tracking-wide font-medium hover:glow-blue transition-all disabled:opacity-50"
           >
-            {busy ? "Please wait…" : mode === "signin" ? "Sign In" : "Create Account"}
+            {busy ? "Please wait…" : "Sign In"}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-muted-foreground">
-          {mode === "signin" ? "First time?" : "Already have an account?"}{" "}
-          <button
-            onClick={() => {
-              setMode(mode === "signin" ? "signup" : "signin");
-              setError(null);
-            }}
-            className="text-primary hover:underline"
-          >
-            {mode === "signin" ? "Create account" : "Sign in"}
-          </button>
-        </div>
-
-        {mode === "signup" && (
-          <p className="mt-6 text-[11px] text-muted-foreground leading-relaxed">
-            Note: New accounts have no admin access by default. After creating
-            the first account, grant it the <code className="text-silver">admin</code> role from the
-            backend dashboard.
-          </p>
-        )}
+        <p className="mt-8 text-[11px] text-muted-foreground leading-relaxed text-center">
+          Public registration is closed. Contact the site owner for access.
+        </p>
       </motion.div>
     </main>
   );
