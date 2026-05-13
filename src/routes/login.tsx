@@ -62,8 +62,8 @@ function LoginPage() {
 
   return (
     <main className="dark min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-12 relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 grid-bg opacity-20" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] bg-glow opacity-50" />
+      <div className="absolute inset-0 -z-10 grid-bg opacity-20 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] bg-glow opacity-50 pointer-events-none -z-10" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

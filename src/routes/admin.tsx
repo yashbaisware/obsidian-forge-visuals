@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { CATEGORIES, type Category, type Project } from "@/lib/projects";
@@ -13,12 +14,21 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-const projectSchema = z.object({
+const baseSchema = z.object({
   title: z.string().trim().min(1, "Title required").max(120),
   description: z.string().trim().max(600).default(""),
   category: z.enum(CATEGORIES),
   featured: z.boolean(),
 });
+
+const DRAFT_KEY = "obsidian.admin.draft.v2";
+
+type DraftState = {
+  title: string;
+  description: string;
+  category: Category;
+  featured: boolean;
+};
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -27,13 +37,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      navigate({ to: "/login" });
-      return;
-    }
-    if (!isAdmin) {
-      navigate({ to: "/login" });
-    }
+    if (!user || !isAdmin) navigate({ to: "/login" });
   }, [user, isAdmin, loading, navigate]);
 
   const { data: projects = [], isLoading } = useQuery({
@@ -50,20 +54,19 @@ function AdminPage() {
     },
   });
 
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["projects"] });
-  };
+  const refresh = () => qc.invalidateQueries({ queryKey: ["projects"] });
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    navigate({ to: "/" });
+    toast.success("Signed out");
+    navigate({ to: "/login" });
   };
 
   if (loading || !user || !isAdmin) {
     return (
       <main className="dark min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-muted-foreground text-sm tracking-widest">
-          {loading ? "Loading…" : "Unauthorized Access — redirecting…"}
+          {loading ? "Loading…" : "Unauthorized — redirecting…"}
         </div>
       </main>
     );
@@ -71,7 +74,7 @@ function AdminPage() {
 
   return (
     <main className="dark min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
+      <header className="border-b border-border sticky top-0 z-40 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="" width={36} height={36} className="h-9 w-9 object-contain" />
@@ -81,10 +84,7 @@ function AdminPage() {
             </div>
           </Link>
           <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground"
-            >
+            <Link to="/" className="text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground">
               View Site
             </Link>
             <button
@@ -101,14 +101,7 @@ function AdminPage() {
         <section className="lg:col-span-5">
           <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-3">— New Project</div>
           <h2 className="text-2xl text-silver font-semibold mb-6">Add to portfolio</h2>
-          {!isAdmin && (
-            <div className="mb-6 rounded-2xl border border-border bg-card/60 p-4 text-xs text-muted-foreground leading-relaxed">
-              Your account is signed in but not yet an admin. Open the backend
-              dashboard and add a row in <code className="text-silver">user_roles</code> with
-              your user id and role <code className="text-silver">admin</code> to enable editing.
-            </div>
-          )}
-          <ProjectForm onSaved={refresh} disabled={!isAdmin} />
+          <ProjectForm onSaved={refresh} />
         </section>
 
         <section className="lg:col-span-7">
@@ -121,138 +114,19 @@ function AdminPage() {
 
           {isLoading ? (
             <div className="text-muted-foreground text-sm">Loading…</div>
+          ) : projects.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border bg-card/40 p-10 text-center text-muted-foreground text-sm">
+              No projects yet. Add your first one on the left.
+            </div>
           ) : (
             <div className="space-y-3">
               {projects.map((p) => (
-                <ProjectRow key={p.id} project={p} onChange={refresh} disabled={!isAdmin} />
+                <ProjectRow key={p.id} project={p} onChange={refresh} />
               ))}
             </div>
           )}
         </section>
       </div>
-    </main>
-  );
-}
-
-function ProjectForm({ onSaved, disabled }: { onSaved: () => void; disabled: boolean }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<Category>("Carousel Ads");
-  const [featured, setFeatured] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
-
-  const submit = async () => {
-    setError(null);
-    setOkMsg(null);
-    if (!file) return setError("Select a project image");
-    const parsed = projectSchema.safeParse({ title, description, category, featured });
-    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Invalid input");
-
-    setBusy(true);
-    try {
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const path = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("project-images")
-        .upload(path, file, { cacheControl: "3600", upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("project-images").getPublicUrl(path);
-
-      const { error: insErr } = await supabase.from("projects").insert({
-        ...parsed.data,
-        image_url: pub.publicUrl,
-      });
-      if (insErr) throw insErr;
-
-      setTitle("");
-      setDescription("");
-      setFile(null);
-      setFeatured(false);
-      setOkMsg("Project added");
-      onSaved();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-border bg-card/60 p-6 space-y-4"
-    >
-      <Field label="Title">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={120}
-          className="input"
-          placeholder="Lumière Atelier"
-          disabled={disabled}
-        />
-      </Field>
-
-      <Field label="Description">
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={600}
-          rows={3}
-          className="input resize-none"
-          placeholder="Short cinematic description of the campaign…"
-          disabled={disabled}
-        />
-      </Field>
-
-      <Field label="Category">
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          className="input"
-          disabled={disabled}
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Image">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:tracking-[0.2em] file:uppercase file:text-primary-foreground hover:file:bg-primary/90"
-          disabled={disabled}
-        />
-      </Field>
-
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={featured}
-          onChange={(e) => setFeatured(e.target.checked)}
-          className="h-4 w-4 accent-[oklch(0.7_0.18_245)]"
-          disabled={disabled}
-        />
-        Featured project
-      </label>
-
-      {error && <div className="text-sm text-destructive">{error}</div>}
-      {okMsg && <div className="text-sm text-primary">{okMsg}</div>}
-
-      <button
-        onClick={submit}
-        disabled={busy || disabled}
-        className="w-full inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm tracking-wide font-medium hover:glow-blue transition-all disabled:opacity-50"
-      >
-        {busy ? "Saving…" : "Add Project"}
-      </button>
 
       <style>{`
         .input {
@@ -264,8 +138,267 @@ function ProjectForm({ onSaved, disabled }: { onSaved: () => void; disabled: boo
           font-size: 0.875rem;
           color: var(--foreground);
         }
-        .input:focus { outline: none; border-color: oklch(0.7 0.18 245 / 0.6); }
+        .input:focus { outline: none; border-color: oklch(0.7 0.18 245 / 0.6); box-shadow: 0 0 0 3px oklch(0.7 0.18 245 / 0.15); }
+        .drop {
+          border: 1.5px dashed oklch(0.4 0.02 260 / 0.6);
+          border-radius: 16px;
+          padding: 1.25rem;
+          background: oklch(0.12 0.005 260 / 0.4);
+          transition: all .2s;
+          cursor: pointer;
+        }
+        .drop:hover, .drop.is-drag { border-color: oklch(0.7 0.18 245 / 0.7); background: oklch(0.7 0.18 245 / 0.05); }
       `}</style>
+    </main>
+  );
+}
+
+function loadDraft(): Partial<DraftState> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as DraftState) : {};
+  } catch {
+    return {};
+  }
+}
+
+function ProjectForm({ onSaved }: { onSaved: () => void }) {
+  const draft = loadDraft();
+  const [title, setTitle] = useState(draft.title ?? "");
+  const [description, setDescription] = useState(draft.description ?? "");
+  const [category, setCategory] = useState<Category>((draft.category as Category) ?? "Carousel");
+  const [featured, setFeatured] = useState(draft.featured ?? false);
+
+  // Per-category file state (not persisted — files can't be JSON-serialized safely)
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [savedHint, setSavedHint] = useState(false);
+  const saveTimer = useRef<number | null>(null);
+
+  // Auto-save text fields to localStorage with debounce
+  useEffect(() => {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({ title, description, category, featured })
+        );
+        setSavedHint(true);
+        window.setTimeout(() => setSavedHint(false), 1200);
+      } catch {
+        /* ignore quota */
+      }
+    }, 400);
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, [title, description, category, featured]);
+
+  const reset = () => {
+    setTitle("");
+    setDescription("");
+    setFeatured(false);
+    setCoverFile(null);
+    setPdfFile(null);
+    setVideoFile(null);
+    setGalleryFiles([]);
+    localStorage.removeItem(DRAFT_KEY);
+  };
+
+  const uploadOne = async (file: File, prefix: string) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+    const path = `${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("project-images")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (error) throw error;
+    return supabase.storage.from("project-images").getPublicUrl(path).data.publicUrl;
+  };
+
+  const submit = async () => {
+    const parsed = baseSchema.safeParse({ title, description, category, featured });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
+      return;
+    }
+
+    // Per-category requirements
+    if (category === "Carousel" && (!coverFile || !pdfFile)) {
+      toast.error("Upload both a cover image and a PDF");
+      return;
+    }
+    if (category === "Product Image Ads" && galleryFiles.length === 0) {
+      toast.error("Add at least one product image");
+      return;
+    }
+    if (category === "Product Video Ads" && (!coverFile || !videoFile)) {
+      toast.error("Upload both a cover image and a video");
+      return;
+    }
+
+    setBusy(true);
+    setProgress(5);
+    try {
+      let cover_url: string | null = null;
+      let pdf_url: string | null = null;
+      let video_url: string | null = null;
+      let gallery_urls: string[] = [];
+      let image_url = "";
+
+      if (category === "Carousel") {
+        cover_url = await uploadOne(coverFile!, "covers");
+        setProgress(50);
+        pdf_url = await uploadOne(pdfFile!, "pdfs");
+        image_url = cover_url;
+      } else if (category === "Product Image Ads") {
+        const total = galleryFiles.length;
+        for (let i = 0; i < total; i++) {
+          const url = await uploadOne(galleryFiles[i], "gallery");
+          gallery_urls.push(url);
+          setProgress(Math.round(((i + 1) / total) * 90));
+        }
+        image_url = gallery_urls[0];
+        cover_url = image_url;
+      } else if (category === "Product Video Ads") {
+        cover_url = await uploadOne(coverFile!, "covers");
+        setProgress(40);
+        video_url = await uploadOne(videoFile!, "videos");
+        image_url = cover_url;
+      }
+
+      setProgress(95);
+      const { error: insErr } = await supabase.from("projects").insert({
+        ...parsed.data,
+        image_url,
+        cover_url,
+        pdf_url,
+        video_url,
+        gallery_urls,
+      });
+      if (insErr) throw insErr;
+
+      setProgress(100);
+      toast.success("Project published");
+      reset();
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setBusy(false);
+      window.setTimeout(() => setProgress(0), 600);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-3xl border border-border bg-card/60 p-6 space-y-5 relative"
+    >
+      <AnimatePresence>
+        {savedHint && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute right-4 top-4 text-[10px] tracking-[0.25em] uppercase text-primary/80"
+          >
+            ● Draft saved
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Field label="Title">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className="input" placeholder="Lumière Atelier" />
+      </Field>
+
+      <Field label="Description">
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={600}
+          rows={3}
+          className="input resize-none"
+          placeholder="Short cinematic description…"
+        />
+      </Field>
+
+      <Field label="Category">
+        <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="input">
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </Field>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={category}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-4"
+        >
+          {category === "Carousel" && (
+            <>
+              <FileDrop label="Cover Image" accept="image/*" file={coverFile} onFile={setCoverFile} preview="image" />
+              <FileDrop label="PDF File" accept="application/pdf" file={pdfFile} onFile={setPdfFile} preview="pdf" />
+            </>
+          )}
+
+          {category === "Product Image Ads" && (
+            <GalleryDrop files={galleryFiles} onFiles={setGalleryFiles} />
+          )}
+
+          {category === "Product Video Ads" && (
+            <>
+              <FileDrop label="Cover Image" accept="image/*" file={coverFile} onFile={setCoverFile} preview="image" />
+              <FileDrop label="Video File" accept="video/*" file={videoFile} onFile={setVideoFile} preview="video" />
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <label className="flex items-center gap-2 text-sm text-muted-foreground select-none">
+        <input
+          type="checkbox"
+          checked={featured}
+          onChange={(e) => setFeatured(e.target.checked)}
+          className="h-4 w-4 accent-[oklch(0.7_0.18_245)]"
+        />
+        Featured project
+      </label>
+
+      {progress > 0 && (
+        <div className="h-1 w-full rounded-full bg-border overflow-hidden">
+          <motion.div className="h-full bg-primary" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="flex-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm tracking-wide font-medium hover:glow-blue transition-all disabled:opacity-50"
+        >
+          {busy ? "Uploading…" : "Add Project"}
+        </button>
+        <button
+          onClick={reset}
+          disabled={busy}
+          className="rounded-full border border-border bg-card/60 px-4 py-3 text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground hover:border-primary/40 disabled:opacity-50"
+        >
+          Clear
+        </button>
+      </div>
     </motion.div>
   );
 }
@@ -279,64 +412,182 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ProjectRow({
-  project,
-  onChange,
-  disabled,
+function FileDrop({
+  label,
+  accept,
+  file,
+  onFile,
+  preview,
 }: {
-  project: Project;
-  onChange: () => void;
-  disabled: boolean;
+  label: string;
+  accept: string;
+  file: File | null;
+  onFile: (f: File | null) => void;
+  preview: "image" | "pdf" | "video";
 }) {
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const url = file ? URL.createObjectURL(file) : null;
+
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+
+  const handle = (f: File | null) => {
+    if (!f) return;
+    onFile(f);
+  };
+
+  return (
+    <Field label={label}>
+      <div
+        className={`drop ${drag ? "is-drag" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          handle(e.dataTransfer.files?.[0] ?? null);
+        }}
+        onClick={() => inputRef.current?.click()}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(e) => handle(e.target.files?.[0] ?? null)}
+        />
+        {!file ? (
+          <div className="text-center text-xs text-muted-foreground py-3">
+            <div className="text-silver mb-1">Drop file or click to upload</div>
+            <div className="opacity-60">{accept.replace("/*", "")} files only</div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            {preview === "image" && url && <img src={url} alt="" className="h-16 w-16 rounded-lg object-cover border border-border" />}
+            {preview === "pdf" && (
+              <div className="h-16 w-16 rounded-lg border border-border bg-background/60 flex items-center justify-center text-primary text-[10px] tracking-[0.2em]">PDF</div>
+            )}
+            {preview === "video" && url && (
+              <video src={url} className="h-16 w-24 rounded-lg object-cover border border-border" muted />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-silver truncate">{file.name}</div>
+              <div className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onFile(null); }}
+              className="text-xs text-destructive hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+    </Field>
+  );
+}
+
+function GalleryDrop({ files, onFiles }: { files: File[]; onFiles: (f: File[]) => void }) {
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const add = (list: FileList | null) => {
+    if (!list) return;
+    onFiles([...files, ...Array.from(list)]);
+  };
+
+  return (
+    <Field label={`Product Images (${files.length})`}>
+      <div
+        className={`drop ${drag ? "is-drag" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files); }}
+        onClick={() => inputRef.current?.click()}
+      >
+        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => add(e.target.files)} />
+        <div className="text-center text-xs text-muted-foreground py-2">
+          <div className="text-silver mb-1">Drop images or click to upload</div>
+          <div className="opacity-60">Add as many as you like</div>
+        </div>
+      </div>
+      {files.length > 0 && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-2 snap-x">
+          {files.map((f, i) => {
+            const url = URL.createObjectURL(f);
+            return (
+              <div key={i} className="relative h-24 w-24 flex-shrink-0 snap-start rounded-lg overflow-hidden border border-border group">
+                <img src={url} alt="" className="h-full w-full object-cover" onLoad={() => URL.revokeObjectURL(url)} />
+                <button
+                  type="button"
+                  onClick={() => onFiles(files.filter((_, j) => j !== i))}
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/80 text-destructive text-xs opacity-0 group-hover:opacity-100 transition"
+                  aria-label="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Field>
+  );
+}
+
+function ProjectRow({ project, onChange }: { project: Project; onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description);
-  const [category, setCategory] = useState<Category>(project.category as Category);
+  const [category, setCategory] = useState<Category>(
+    (CATEGORIES as readonly string[]).includes(project.category) ? (project.category as Category) : "Carousel"
+  );
 
   const toggleFeatured = async () => {
     setBusy(true);
-    await supabase.from("projects").update({ featured: !project.featured }).eq("id", project.id);
+    const { error } = await supabase.from("projects").update({ featured: !project.featured }).eq("id", project.id);
     setBusy(false);
+    if (error) toast.error(error.message);
+    else toast.success(project.featured ? "Removed from featured" : "Marked as featured");
     onChange();
   };
 
   const save = async () => {
     setBusy(true);
-    await supabase
-      .from("projects")
-      .update({ title, description, category })
-      .eq("id", project.id);
+    const { error } = await supabase.from("projects").update({ title, description, category }).eq("id", project.id);
     setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Project updated");
     setEditing(false);
     onChange();
   };
 
   const remove = async () => {
-    if (!confirm("Delete this project?")) return;
+    if (!confirm(`Delete "${project.title}"? This cannot be undone.`)) return;
     setBusy(true);
-    await supabase.from("projects").delete().eq("id", project.id);
+    const { error } = await supabase.from("projects").delete().eq("id", project.id);
     setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Project deleted");
     onChange();
   };
 
+  const thumb = project.cover_url || project.image_url || project.gallery_urls?.[0];
+
   return (
     <div className="rounded-2xl border border-border bg-card/60 p-4 flex gap-4 items-start">
-      <img
-        src={project.image_url}
-        alt={project.title}
-        className="h-24 w-20 rounded-lg object-cover border border-border flex-shrink-0"
-      />
+      {thumb ? (
+        <img src={thumb} alt={project.title} className="h-24 w-20 rounded-lg object-cover border border-border flex-shrink-0" />
+      ) : (
+        <div className="h-24 w-20 rounded-lg border border-border flex-shrink-0 bg-background/50" />
+      )}
       <div className="flex-1 min-w-0">
         {editing ? (
           <div className="space-y-2">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="input resize-none"
-            />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="input resize-none" />
             <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="input">
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -353,9 +604,7 @@ function ProjectRow({
                 </span>
               )}
             </div>
-            <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mt-1">
-              {project.category}
-            </div>
+            <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mt-1">{project.category}</div>
             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{project.description}</p>
           </>
         )}
@@ -368,11 +617,11 @@ function ProjectRow({
             </>
           ) : (
             <>
-              <Btn variant="ghost" onClick={() => setEditing(true)} disabled={disabled || busy}>Edit</Btn>
-              <Btn variant="ghost" onClick={toggleFeatured} disabled={disabled || busy}>
+              <Btn variant="ghost" onClick={() => setEditing(true)} disabled={busy}>Edit</Btn>
+              <Btn variant="ghost" onClick={toggleFeatured} disabled={busy}>
                 {project.featured ? "Unfeature" : "Feature"}
               </Btn>
-              <Btn variant="danger" onClick={remove} disabled={disabled || busy}>Delete</Btn>
+              <Btn variant="danger" onClick={remove} disabled={busy}>Delete</Btn>
             </>
           )}
         </div>
