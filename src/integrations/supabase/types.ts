@@ -17,36 +17,48 @@ export type Database = {
       projects: {
         Row: {
           category: string
+          cover_url: string | null
           created_at: string
           description: string
           featured: boolean
+          gallery_urls: string[]
           id: string
           image_url: string
+          pdf_url: string | null
           sort_order: number
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           category?: string
+          cover_url?: string | null
           created_at?: string
           description?: string
           featured?: boolean
+          gallery_urls?: string[]
           id?: string
           image_url: string
+          pdf_url?: string | null
           sort_order?: number
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           category?: string
+          cover_url?: string | null
           created_at?: string
           description?: string
           featured?: boolean
+          gallery_urls?: string[]
           id?: string
           image_url?: string
+          pdf_url?: string | null
           sort_order?: number
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
