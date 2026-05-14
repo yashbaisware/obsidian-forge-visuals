@@ -34,6 +34,7 @@ function Index() {
       <Navbar />
       <Hero />
       <Portfolio />
+      <MyWork />
       <About />
       <Contact />
       <Footer />
