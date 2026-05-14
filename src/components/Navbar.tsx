@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import logo from "@/assets/obsidian-logo.png";
 
-const links = [
-  { label: "Home", hash: "" },
-  { label: "Portfolio", hash: "portfolio" },
-  { label: "About", hash: "about" },
-  { label: "Contact", hash: "contact" },
+type NavLink =
+  | { label: string; type: "section"; hash: string }
+  | { label: string; type: "route"; to: string };
+
+const links: NavLink[] = [
+  { label: "Home", type: "section", hash: "" },
+  { label: "Portfolio", type: "section", hash: "portfolio" },
+  { label: "My Work", type: "route", to: "/my-work" },
+  { label: "About", type: "section", hash: "about" },
+  { label: "Contact", type: "section", hash: "contact" },
 ];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -21,10 +28,25 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollTo = (id: string) => {
+  const goSection = (id: string) => {
     setOpen(false);
-    if (!id) return window.scrollTo({ top: 0, behavior: "smooth" });
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scroll = () => {
+      if (!id) return window.scrollTo({ top: 0, behavior: "smooth" });
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (location.pathname !== "/") {
+      void navigate({ to: "/" }).then(() => {
+        // wait for homepage sections to mount
+        setTimeout(scroll, 80);
+      });
+    } else {
+      scroll();
+    }
+  };
+
+  const goRoute = (to: string) => {
+    setOpen(false);
+    void navigate({ to });
   };
 
   return (
@@ -58,7 +80,7 @@ export function Navbar() {
             {links.map((l) => (
               <li key={l.label}>
                 <button
-                  onClick={() => scrollTo(l.hash)}
+                  onClick={() => (l.type === "route" ? goRoute(l.to) : goSection(l.hash))}
                   className="px-5 py-2 text-sm tracking-wide text-muted-foreground hover:text-foreground transition-colors relative group"
                 >
                   {l.label}
@@ -69,7 +91,7 @@ export function Navbar() {
           </ul>
 
           <button
-            onClick={() => scrollTo("contact")}
+            onClick={() => goSection("contact")}
             className="hidden md:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground hover:glow-blue transition-all"
           >
             Get in Touch
@@ -95,7 +117,7 @@ export function Navbar() {
             {links.map((l) => (
               <li key={l.label}>
                 <button
-                  onClick={() => scrollTo(l.hash)}
+                  onClick={() => (l.type === "route" ? goRoute(l.to) : goSection(l.hash))}
                   className="w-full text-left px-4 py-3 text-sm text-muted-foreground hover:text-foreground"
                 >
                   {l.label}
