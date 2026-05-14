@@ -12,7 +12,7 @@ const FALLBACKS = [m1, m2, m3];
 export function Portfolio() {
   const [open, setOpen] = useState<Project | null>(null);
 
-  const { data: projects = [] } = useQuery({
+  const { data: allProjects = [] } = useQuery({
     queryKey: ["projects", "public"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,6 +24,8 @@ export function Portfolio() {
       return data as Project[];
     },
   });
+  const featured = allProjects.filter((p) => p.featured);
+  const projects = featured.length > 0 ? featured : allProjects.slice(0, 3);
 
   return (
     <section id="portfolio" className="relative py-32 overflow-hidden">
