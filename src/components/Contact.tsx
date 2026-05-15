@@ -41,20 +41,7 @@ export function Contact() {
           </p>
         </motion.div>
 
-        <motion.a
-          href="mailto:studio@obsidiancreative.co"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          whileHover={{ scale: 1.04 }}
-          className="mt-12 inline-flex items-center gap-3 rounded-full bg-primary text-primary-foreground px-10 py-5 text-sm tracking-[0.2em] uppercase font-medium glow-blue"
-        >
-          Start a Project
-          <span>→</span>
-        </motion.a>
-
-        <div className="mt-20 grid sm:grid-cols-3 gap-4">
+        <div className="mt-14 grid sm:grid-cols-3 gap-4">
           {channels.map((c, i) => (
             <motion.a
               key={c.label}

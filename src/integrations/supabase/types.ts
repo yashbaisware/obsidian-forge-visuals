@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      hero_showcase: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_visible: boolean
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_visible?: boolean
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_visible?: boolean
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           category: string

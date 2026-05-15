@@ -1,4 +1,8 @@
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { HeroImage } from "@/lib/hero";
 import heroBg from "@/assets/hero-bg.jpg";
 import m1 from "@/assets/mockup-1.jpg";
 import m2 from "@/assets/mockup-2.jpg";
@@ -10,9 +14,60 @@ const features = [
   { label: "Premium Design" },
 ];
 
+const FALLBACK = [m1, m2, m3];
+
 export function Hero() {
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+
+  const { data: dbImages = [] } = useQuery({
+    queryKey: ["hero_showcase", "public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hero_showcase" as never)
+        .select("*")
+        .eq("is_visible", true)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as HeroImage[];
+    },
+  });
+
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("hero-showcase-public")
+      .on("postgres_changes", { event: "*", schema: "public", table: "hero_showcase" }, () => {
+        qc.invalidateQueries({ queryKey: ["hero_showcase"] });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  const images = useMemo(
+    () => (dbImages.length > 0 ? dbImages.map((i) => i.image_url) : FALLBACK),
+    [dbImages]
+  );
+
+  // Auto-rotate front index
+  const [front, setFront] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused || images.length < 2) return;
+    const id = window.setInterval(() => {
+      setFront((f) => (f + 1) % images.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [paused, images.length]);
+
+  // Build the visible 3-card stack starting at `front`
+  const stack = useMemo(() => {
+    const n = images.length;
+    if (n === 0) return [];
+    return [0, 1, 2].map((offset) => images[(front + offset) % n]);
+  }, [images, front]);
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-36 pb-20">
@@ -31,7 +86,6 @@ export function Hero() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center w-full">
-        {/* Text */}
         <div className="lg:col-span-7">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -91,7 +145,6 @@ export function Hero() {
             </button>
           </motion.div>
 
-          {/* Minimal feature cards (replaces fake stats) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -110,16 +163,31 @@ export function Hero() {
           </motion.div>
         </div>
 
-        {/* Stacked carousel mockups */}
-        <div className="lg:col-span-5 relative h-[480px] sm:h-[560px] lg:h-[640px] hidden md:block">
-          <CarouselStack mockups={[m1, m2, m3]} />
+        <div
+          className="lg:col-span-5 relative h-[480px] sm:h-[560px] lg:h-[640px] hidden md:block"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          <CarouselStack
+            stack={stack}
+            current={front}
+            total={images.length}
+          />
         </div>
       </div>
     </section>
   );
 }
 
-function CarouselStack({ mockups }: { mockups: string[] }) {
+function CarouselStack({
+  stack,
+  current,
+  total,
+}: {
+  stack: string[];
+  current: number;
+  total: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
@@ -127,17 +195,33 @@ function CarouselStack({ mockups }: { mockups: string[] }) {
       transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className="absolute inset-0 flex items-center justify-center"
     >
-      {/* glow halo */}
       <div className="absolute inset-0 bg-glow" />
 
-      {/* back card */}
-      <Card src={mockups[2]} className="-rotate-[10deg] -translate-x-24 translate-y-4 z-0 opacity-70" delay={0.5} />
-      {/* mid card */}
-      <Card src={mockups[1]} className="rotate-[8deg] translate-x-24 -translate-y-2 z-10 opacity-90" delay={0.6} />
-      {/* front card */}
-      <Card src={mockups[0]} className="rotate-0 z-20" delay={0.7} featured />
+      <AnimatePresence mode="popLayout">
+        {stack[2] && (
+          <Card
+            key={`back-${stack[2]}`}
+            src={stack[2]}
+            className="-rotate-[10deg] -translate-x-24 translate-y-4 z-0 opacity-70"
+          />
+        )}
+        {stack[1] && (
+          <Card
+            key={`mid-${stack[1]}`}
+            src={stack[1]}
+            className="rotate-[8deg] translate-x-24 -translate-y-2 z-10 opacity-90"
+          />
+        )}
+        {stack[0] && (
+          <Card
+            key={`front-${stack[0]}`}
+            src={stack[0]}
+            className="rotate-0 z-20"
+            featured
+          />
+        )}
+      </AnimatePresence>
 
-      {/* tiny floating UI chip top */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -146,34 +230,28 @@ function CarouselStack({ mockups }: { mockups: string[] }) {
       >
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">Slide 01 / 06</span>
+          <span className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">
+            Slide {String(current + 1).padStart(2, "0")} / {String(Math.max(total, 1)).padStart(2, "0")}
+          </span>
         </div>
       </motion.div>
 
-      {/* dots */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.1, duration: 0.6 }}
         className="absolute bottom-4 left-1/2 -translate-x-1/2 glass rounded-full px-4 py-2 flex items-center gap-2 z-30"
       >
-        <span className="h-1.5 w-6 rounded-full bg-primary" />
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-      </motion.div>
-
-      {/* engagement chip */}
-      <motion.div
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
-        className="absolute bottom-20 -right-2 glass rounded-xl px-3 py-2 z-30 hidden lg:flex items-center gap-2"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="oklch(0.7 0.18 245)" stroke="oklch(0.7 0.18 245)" strokeWidth="1.5">
-          <path d="M12 21s-7-4.5-9.5-9C.5 8 3 4 7 4c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4 4.5 8-2.5 4.5-9.5 9-9.5 9z" strokeLinejoin="round" />
-        </svg>
-        <span className="text-[10px] tracking-[0.2em] uppercase text-silver">CTR +38%</span>
+        {Array.from({ length: Math.max(total, 1) }).map((_, i) => (
+          <span
+            key={i}
+            className={
+              i === current
+                ? "h-1.5 w-6 rounded-full bg-primary transition-all"
+                : "h-1.5 w-1.5 rounded-full bg-muted-foreground/50 transition-all"
+            }
+          />
+        ))}
       </motion.div>
     </motion.div>
   );
@@ -182,28 +260,26 @@ function CarouselStack({ mockups }: { mockups: string[] }) {
 function Card({
   src,
   className,
-  delay,
   featured,
 }: {
   src: string;
   className: string;
-  delay: number;
   featured?: boolean;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, delay, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 30, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.6 } }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className={`absolute ${className}`}
     >
       <div
         className={`animate-float w-[200px] sm:w-[230px] aspect-[9/16] rounded-3xl overflow-hidden border border-border bg-card shadow-elegant ${
           featured ? "glow-blue" : ""
         }`}
-        style={{ animationDelay: `${delay}s` }}
       >
-        <img src={src} alt="" width={460} height={820} className="block h-full w-full object-cover" />
+        <img src={src} alt="" className="block h-full w-full object-cover" />
       </div>
     </motion.div>
   );
