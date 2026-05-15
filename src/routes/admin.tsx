@@ -35,13 +35,81 @@ type DraftState = {
 
 function AdminPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const { user, isAdmin, loading } = useAuth();
   const qc = useQueryClient();
+
+  const performSignOut = async (silent = false) => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+    // Hard purge any persisted Supabase auth tokens
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith("sb-") && k.endsWith("-auth-token")) localStorage.removeItem(k);
+      });
+      Object.keys(sessionStorage).forEach((k) => {
+        if (k.startsWith("sb-") && k.endsWith("-auth-token")) sessionStorage.removeItem(k);
+      });
+    } catch {
+      /* ignore */
+    }
+    if (!silent) toast.success("Signed out");
+  };
 
   useEffect(() => {
     if (loading) return;
     if (!user || !isAdmin) navigate({ to: "/login" });
   }, [user, isAdmin, loading, navigate]);
+
+  // Auto sign-out: tab close / refresh / hard navigation away
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      try {
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith("sb-") && k.endsWith("-auth-token")) localStorage.removeItem(k);
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  // Auto sign-out on inactivity (20 min)
+  useEffect(() => {
+    if (!user || !isAdmin) return;
+    let timer: number | null = null;
+    const reset = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(async () => {
+        await performSignOut(true);
+        toast.error("Session expired due to inactivity");
+        navigate({ to: "/login" });
+      }, IDLE_TIMEOUT_MS);
+    };
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [user, isAdmin, navigate]);
+
+  // Sign out when navigating away from /admin (not to /login)
+  useEffect(() => {
+    return () => {
+      const path = router.state.location.pathname;
+      if (!path.startsWith("/admin") && path !== "/login") {
+        void performSignOut(true);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects", "admin"],
@@ -60,8 +128,7 @@ function AdminPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["projects"] });
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out");
+    await performSignOut();
     navigate({ to: "/login" });
   };
 
