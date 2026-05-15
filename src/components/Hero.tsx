@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { HeroImage } from "@/lib/hero";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -33,18 +33,18 @@ export function Hero() {
     },
   });
 
-  // Realtime
+  const qc = useQueryClient();
   useEffect(() => {
     const channel = supabase
       .channel("hero-showcase-public")
       .on("postgres_changes", { event: "*", schema: "public", table: "hero_showcase" }, () => {
-        // soft refresh by re-querying
+        qc.invalidateQueries({ queryKey: ["hero_showcase"] });
       })
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [qc]);
 
   const images = useMemo(
     () => (dbImages.length > 0 ? dbImages.map((i) => i.image_url) : FALLBACK),
