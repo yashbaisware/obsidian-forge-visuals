@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,12 +7,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { CATEGORIES, type Category, type Project } from "@/lib/projects";
+import type { HeroImage } from "@/lib/hero";
 import logo from "@/assets/obsidian-logo.png";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Obsidian Creative" }] }),
   component: AdminPage,
 });
+
+const IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
 
 const baseSchema = z.object({
   title: z.string().trim().min(1, "Title required").max(120),
