@@ -736,3 +736,180 @@ function Btn({
     </button>
   );
 }
+
+// ───────────────────────── Hero Showcase Manager ─────────────────────────
+
+function HeroShowcaseManager() {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["hero_showcase", "admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hero_showcase" as never)
+        .select("*")
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as HeroImage[];
+    },
+  });
+
+  const refresh = () =>
+    qc.invalidateQueries({ queryKey: ["hero_showcase"] });
+
+  const upload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    try {
+      let nextPos = items.length;
+      for (const file of Array.from(files)) {
+        const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const path = `hero/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("project-images")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw upErr;
+        const url = supabase.storage.from("project-images").getPublicUrl(path).data.publicUrl;
+        const { error: insErr } = await supabase
+          .from("hero_showcase" as never)
+          .insert({ image_url: url, position: nextPos++, is_visible: true } as never);
+        if (insErr) throw insErr;
+      }
+      toast.success("Hero image(s) uploaded");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const move = async (id: string, dir: -1 | 1) => {
+    const idx = items.findIndex((i) => i.id === id);
+    const swap = items[idx + dir];
+    if (!swap) return;
+    const a = items[idx];
+    setBusy(true);
+    const { error: e1 } = await supabase
+      .from("hero_showcase" as never)
+      .update({ position: swap.position } as never)
+      .eq("id", a.id);
+    const { error: e2 } = await supabase
+      .from("hero_showcase" as never)
+      .update({ position: a.position } as never)
+      .eq("id", swap.id);
+    setBusy(false);
+    if (e1 || e2) toast.error("Reorder failed");
+    else refresh();
+  };
+
+  const toggleVisible = async (item: HeroImage) => {
+    const { error } = await supabase
+      .from("hero_showcase" as never)
+      .update({ is_visible: !item.is_visible } as never)
+      .eq("id", item.id);
+    if (error) toast.error(error.message);
+    else refresh();
+  };
+
+  const remove = async (item: HeroImage) => {
+    if (!confirm("Remove this hero image?")) return;
+    const { error } = await supabase.from("hero_showcase" as never).delete().eq("id", item.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Removed");
+      refresh();
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div
+        className="drop"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          void upload(e.dataTransfer.files);
+        }}
+        onClick={() => fileRef.current?.click()}
+      >
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => void upload(e.target.files)}
+        />
+        <div className="text-center text-xs text-muted-foreground py-2">
+          <div className="text-silver mb-1">Drop hero images or click to upload</div>
+          <div className="opacity-60">Multiple selection supported</div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="text-muted-foreground text-sm">Loading…</div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center text-muted-foreground text-sm">
+          No hero images yet. Upload to start customizing the homepage hero.
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {items.map((item, i) => (
+            <div
+              key={item.id}
+              className={`rounded-2xl border bg-card/60 overflow-hidden ${
+                item.is_visible ? "border-border" : "border-border/40 opacity-60"
+              }`}
+            >
+              <div className="relative aspect-[9/12] bg-background/40">
+                <img src={item.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 glass rounded-full px-2.5 py-0.5 text-[10px] tracking-[0.2em] uppercase text-primary">
+                  #{i + 1}
+                  {i === 0 && " · Front"}
+                </div>
+              </div>
+              <div className="p-3 flex flex-wrap gap-1.5 justify-between items-center">
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => move(item.id, -1)}
+                    disabled={busy || i === 0}
+                    className="px-2 py-1 text-[10px] rounded-md border border-border hover:border-primary/40 disabled:opacity-30"
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => move(item.id, 1)}
+                    disabled={busy || i === items.length - 1}
+                    className="px-2 py-1 text-[10px] rounded-md border border-border hover:border-primary/40 disabled:opacity-30"
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => toggleVisible(item)}
+                    className="px-2 py-1 text-[10px] tracking-wider uppercase rounded-md border border-border hover:border-primary/40"
+                  >
+                    {item.is_visible ? "Hide" : "Show"}
+                  </button>
+                  <button
+                    onClick={() => remove(item)}
+                    className="px-2 py-1 text-[10px] tracking-wider uppercase rounded-md border border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
