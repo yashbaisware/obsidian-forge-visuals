@@ -196,6 +196,19 @@ function AdminPage() {
             </div>
           )}
         </section>
+
+        <section className="lg:col-span-12 mt-6 pt-10 border-t border-border">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-3">— Hero Showcase</div>
+              <h2 className="text-2xl text-silver font-semibold">Homepage hero images</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Position 1 = front · Position 2 = mid · Position 3+ = back. Auto-rotation runs every 5s.
+              </p>
+            </div>
+          </div>
+          <HeroShowcaseManager />
+        </section>
       </div>
 
       <style>{`
