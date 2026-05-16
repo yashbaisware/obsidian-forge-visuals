@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-<<<<<<< HEAD
+
 import Lightbox, { Item } from "@/components/Lightbox";
-=======
->>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
+
 import { CATEGORIES, type Category, type Project } from "@/lib/projects";
 
 export function MyWork() {
@@ -196,7 +195,9 @@ function ProjectCard({
 }
 
 function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
-<<<<<<< HEAD
+
+  const [showPdf, setShowPdf] = useState(false);
+
   const [showPreview, setShowPreview] = useState(false);
   const [index, setIndex] = useState(0);
   const cover = project.cover_url || project.image_url || project.gallery_urls?.[0] || "";
@@ -381,11 +382,12 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         onIndexChange={(i) => setIndex(i)}
       />
     </>
-=======
-  const [showPdf, setShowPdf] = useState(false);
-  const cover =
-    project.cover_url || project.image_url || project.gallery_urls?.[0];
+ );
 
+
+  project.cover_url ||
+  project.image_url ||
+  project.gallery_urls?.[0];
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -439,10 +441,10 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
               )}
             </div>
 
-            {/* Media-specific viewer */}
+            
             {project.category === "Product Video Ads" && project.video_url && (
               <video
-                src={project.video_url}
+                src={project.video_url || undefined}
                 poster={project.cover_url ?? undefined}
                 controls
                 className="w-full rounded-xl border border-border bg-black max-h-[50vh]"
@@ -462,7 +464,7 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
                     className="w-full h-[50vh] rounded-xl border border-border bg-black"
                   >
                     <a
-                      href={project.pdf_url}
+                     href={project.pdf_url || undefined}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary underline text-sm"
@@ -473,13 +475,13 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
                 ) : null}
                 <div className="flex flex-wrap gap-3">
                   <button
-                    onClick={() => setShowPdf((s) => !s)}
+                    onClick={() => setShowPdf((s: boolean) => !s)}
                     className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground transition-all"
                   >
                     {showPdf ? "Hide Preview" : "Preview PDF"}
                   </button>
                   <a
-                    href={project.pdf_url}
+                    href={project.pdf_url || undefined}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
@@ -493,7 +495,7 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         </div>
       </motion.div>
     </motion.div>
->>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
+ 
   );
 }
 

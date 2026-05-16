@@ -1,10 +1,6 @@
-<<<<<<< HEAD
+{
 
-{
-  
-=======
-{
->>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
+
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
   "compilerOptions": {
     "target": "ES2022",
