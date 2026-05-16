@@ -20,6 +20,7 @@ export function Hero() {
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
+<<<<<<< HEAD
   const goToExploreWork = () => {
     const target = document.getElementById("my-work");
     if (target) {
@@ -29,6 +30,8 @@ export function Hero() {
     window.location.href = "/my-work";
   };
 
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
   const { data: dbImages = [] } = useQuery({
     queryKey: ["hero_showcase", "public"],
     queryFn: async () => {
@@ -79,7 +82,11 @@ export function Hero() {
   }, [images, front]);
 
   return (
+<<<<<<< HEAD
     <section className="relative min-h-[70vh] flex items-center overflow-hidden pt-20 md:pt-24 pb-10">
+=======
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-36 pb-20">
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
       <div className="absolute inset-0 -z-10">
         <img
           src={heroBg}
@@ -127,7 +134,11 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25 }}
+<<<<<<< HEAD
            className="mt-5 max-w-xl text-base sm:text-lg text-muted-foreground leading-relaxed"
+=======
+            className="mt-8 max-w-xl text-base sm:text-lg text-muted-foreground leading-relaxed"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           >
             Obsidian Creative designs premium carousel ads and AI-powered visuals
             for modern brands and digital campaigns.
@@ -137,7 +148,11 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
+<<<<<<< HEAD
             className="mt-6 flex flex-wrap gap-4"
+=======
+            className="mt-10 flex flex-wrap gap-4"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           >
             <button
               onClick={() => scrollTo("portfolio")}
@@ -147,7 +162,11 @@ export function Hero() {
               <span className="transition-transform group-hover:translate-x-1">→</span>
             </button>
             <button
+<<<<<<< HEAD
               onClick={goToExploreWork}
+=======
+              onClick={() => scrollTo("portfolio")}
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
               className="inline-flex items-center gap-3 rounded-full border border-border bg-card/40 backdrop-blur px-7 py-3.5 text-sm tracking-wide text-foreground hover:border-primary/60 hover:bg-card transition-all"
             >
               Explore Work
@@ -158,7 +177,11 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.55 }}
+<<<<<<< HEAD
           className="mt-6 flex flex-wrap gap-3"
+=======
+            className="mt-14 flex flex-wrap gap-3"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           >
             {features.map((f) => (
               <div

@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Lightbox, { Item } from "@/components/Lightbox";
+=======
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Project } from "@/lib/projects";
@@ -29,10 +34,17 @@ export function Portfolio() {
   const projects = featured.length > 0 ? featured : allProjects.slice(0, 3);
 
   return (
+<<<<<<< HEAD
     <section id="portfolio" className="relative pt-16 md:pt-20 pb-16 md:pb-20 overflow-hidden">
       <div className="absolute inset-0 -z-10 grid-bg opacity-30 pointer-events-none" />
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+=======
+    <section id="portfolio" className="relative py-32 overflow-hidden">
+      <div className="absolute inset-0 -z-10 grid-bg opacity-30 pointer-events-none" />
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           <div>
             <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-4">— Selected Work</div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl text-silver font-semibold">Featured Portfolio</h2>
@@ -98,6 +110,7 @@ export function Portfolio() {
 }
 
 function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
+<<<<<<< HEAD
   const [showPreview, setShowPreview] = useState(false);
   const [index, setIndex] = useState(0);
 
@@ -249,6 +262,54 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         onIndexChange={(i) => setIndex(i)}
       />
     </>
+=======
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4 sm:p-10 cursor-zoom-out overflow-y-auto"
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative max-w-6xl w-full my-auto rounded-3xl overflow-hidden border border-border bg-card shadow-elegant cursor-default"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+
+        <div className="grid md:grid-cols-2">
+          <div className="bg-background/50 min-h-[40vh] md:min-h-[80vh] flex items-center justify-center">
+            <ProjectMedia project={project} />
+          </div>
+          <div className="p-8 md:p-12 flex flex-col justify-center">
+            <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-4">{project.category}</div>
+            <h3 className="text-3xl md:text-4xl font-display text-silver mb-6">{project.title}</h3>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{project.description}</p>
+            {project.pdf_url && (
+              <a
+                href={project.pdf_url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-8 inline-flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+              >
+                Open PDF
+              </a>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
   );
 }
 
@@ -290,7 +351,11 @@ function Gallery({ urls, title }: { urls: string[]; title: string }) {
   const safe = (n: number) => (n + urls.length) % urls.length;
   return (
     <div className="w-full flex flex-col gap-3 p-4">
+<<<<<<< HEAD
           <div className="relative aspect-square w-full bg-black rounded-xl overflow-hidden cursor-grab active:cursor-grabbing">
+=======
+      <div className="relative aspect-square w-full bg-black rounded-xl overflow-hidden">
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
         <AnimatePresence mode="wait">
           <motion.img
             key={urls[idx]}
@@ -300,7 +365,11 @@ function Gallery({ urls, title }: { urls: string[]; title: string }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+<<<<<<< HEAD
                 className="absolute inset-0 w-full h-full object-contain cursor-zoom-in transition-all duration-500 ease-out hover:scale-[1.02]"
+=======
+            className="absolute inset-0 w-full h-full object-contain"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           />
         </AnimatePresence>
         {urls.length > 1 && (

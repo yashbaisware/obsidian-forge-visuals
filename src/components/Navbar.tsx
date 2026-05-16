@@ -54,11 +54,19 @@ export function Navbar() {
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+<<<<<<< HEAD
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? "py-3" : "py-5"}`}
     >
       <div className="mx-auto max-w-7xl px-8">
         <nav
           className={`flex items-center justify-between rounded-2xl pl-3 pr-3 py-1.5 transition-all duration-500 ${
+=======
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? "py-3" : "py-6"}`}
+    >
+      <div className="mx-auto max-w-7xl px-6">
+        <nav
+          className={`flex items-center justify-between rounded-2xl pl-3 pr-3 py-2.5 transition-all duration-500 ${
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
             scrolled ? "glass shadow-elegant" : "bg-transparent"
           }`}
         >
@@ -66,6 +74,7 @@ export function Navbar() {
             <img
               src={logo}
               alt="Obsidian Creative"
+<<<<<<< HEAD
               width={95}
               height={95}
               className="h-20 w-20 object-contain transition-transform group-hover:scale-105"
@@ -73,6 +82,15 @@ export function Navbar() {
             <div className="hidden sm:flex flex-col leading-none">
               <span className="font-display text-2xl tracking-[0.28em] text-silver">OBSIDIAN</span>
               <span className="text-sm tracking-[0.45em] text-primary mt-1 uppercase">CREATIVE</span>
+=======
+              width={56}
+              height={56}
+              className="h-14 w-14 object-contain transition-transform group-hover:scale-105"
+            />
+            <div className="hidden sm:flex flex-col leading-none">
+              <span className="font-display text-base tracking-[0.28em] text-silver">OBSIDIAN</span>
+              <span className="text-[10px] tracking-[0.4em] text-primary mt-1">CREATIVE</span>
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
             </div>
           </Link>
 
@@ -81,7 +99,11 @@ export function Navbar() {
               <li key={l.label}>
                 <button
                   onClick={() => (l.type === "route" ? goRoute(l.to) : goSection(l.hash))}
+<<<<<<< HEAD
                   className="px-6 py-3 text-base tracking-wide text-muted-foreground hover:text-foreground transition-colors relative group"
+=======
+                  className="px-5 py-2 text-sm tracking-wide text-muted-foreground hover:text-foreground transition-colors relative group"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
                 >
                   {l.label}
                   <span className="absolute inset-x-5 bottom-1 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
@@ -92,7 +114,11 @@ export function Navbar() {
 
           <button
             onClick={() => goSection("contact")}
+<<<<<<< HEAD
             className="hidden md:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-7 py-3 text-sm tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground hover:glow-blue transition-all"
+=======
+            className="hidden md:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground hover:glow-blue transition-all"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           >
             Get in Touch
           </button>
@@ -118,7 +144,11 @@ export function Navbar() {
               <li key={l.label}>
                 <button
                   onClick={() => (l.type === "route" ? goRoute(l.to) : goSection(l.hash))}
+<<<<<<< HEAD
                   className="w-full text-left px-6 py-3 text-base text-muted-foreground hover:text-foreground"
+=======
+                  className="w-full text-left px-4 py-3 text-sm text-muted-foreground hover:text-foreground"
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
                 >
                   {l.label}
                 </button>

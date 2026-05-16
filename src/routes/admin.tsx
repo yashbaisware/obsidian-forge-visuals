@@ -33,6 +33,7 @@ type DraftState = {
   featured: boolean;
 };
 
+<<<<<<< HEAD
 const uploadOne = async (file: File, prefix: string) => {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
@@ -43,6 +44,8 @@ const uploadOne = async (file: File, prefix: string) => {
   return supabase.storage.from("project-images").getPublicUrl(path).data.publicUrl;
 };
 
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 function AdminPage() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -267,6 +270,10 @@ function ProjectForm({ onSaved }: { onSaved: () => void }) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+<<<<<<< HEAD
+=======
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -300,9 +307,26 @@ function ProjectForm({ onSaved }: { onSaved: () => void }) {
     setCoverFile(null);
     setPdfFile(null);
     setVideoFile(null);
+<<<<<<< HEAD
     localStorage.removeItem(DRAFT_KEY);
   };
 
+=======
+    setGalleryFiles([]);
+    localStorage.removeItem(DRAFT_KEY);
+  };
+
+  const uploadOne = async (file: File, prefix: string) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+    const path = `${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("project-images")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (error) throw error;
+    return supabase.storage.from("project-images").getPublicUrl(path).data.publicUrl;
+  };
+
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
   const submit = async () => {
     const parsed = baseSchema.safeParse({ title, description, category, featured });
     if (!parsed.success) {
@@ -315,8 +339,13 @@ function ProjectForm({ onSaved }: { onSaved: () => void }) {
       toast.error("Upload both a cover image and a PDF");
       return;
     }
+<<<<<<< HEAD
     if (category === "Product Image Ads" && !coverFile) {
       toast.error("Upload a cover image");
+=======
+    if (category === "Product Image Ads" && galleryFiles.length === 0) {
+      toast.error("Add at least one product image");
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
       return;
     }
     if (category === "Product Video Ads" && (!coverFile || !videoFile)) {
@@ -337,15 +366,32 @@ function ProjectForm({ onSaved }: { onSaved: () => void }) {
         cover_url = await uploadOne(coverFile!, "covers");
         setProgress(50);
         pdf_url = await uploadOne(pdfFile!, "pdfs");
+<<<<<<< HEAD
         image_url = cover_url ?? "";
       } else if (category === "Product Image Ads") {
         cover_url = await uploadOne(coverFile!, "covers");
         image_url = cover_url ?? "";
+=======
+        image_url = cover_url;
+      } else if (category === "Product Image Ads") {
+        const total = galleryFiles.length;
+        for (let i = 0; i < total; i++) {
+          const url = await uploadOne(galleryFiles[i], "gallery");
+          gallery_urls.push(url);
+          setProgress(Math.round(((i + 1) / total) * 90));
+        }
+        image_url = gallery_urls[0];
+        cover_url = image_url;
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
       } else if (category === "Product Video Ads") {
         cover_url = await uploadOne(coverFile!, "covers");
         setProgress(40);
         video_url = await uploadOne(videoFile!, "videos");
+<<<<<<< HEAD
         image_url = cover_url ?? "";
+=======
+        image_url = cover_url;
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
       }
 
       setProgress(95);
@@ -430,7 +476,11 @@ function ProjectForm({ onSaved }: { onSaved: () => void }) {
           )}
 
           {category === "Product Image Ads" && (
+<<<<<<< HEAD
             <FileDrop label="Cover Image" accept="image/*" file={coverFile} onFile={setCoverFile} preview="image" />
+=======
+            <GalleryDrop files={galleryFiles} onFiles={setGalleryFiles} />
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           )}
 
           {category === "Product Video Ads" && (
@@ -493,13 +543,17 @@ function FileDrop({
   file,
   onFile,
   preview,
+<<<<<<< HEAD
   previewUrl,
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 }: {
   label: string;
   accept: string;
   file: File | null;
   onFile: (f: File | null) => void;
   preview: "image" | "pdf" | "video";
+<<<<<<< HEAD
   previewUrl?: string | null;
 }) {
   const [drag, setDrag] = useState(false);
@@ -512,6 +566,14 @@ function FileDrop({
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [objectUrl]);
+=======
+}) {
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const url = file ? URL.createObjectURL(file) : null;
+
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 
   const handle = (f: File | null) => {
     if (!f) return;
@@ -626,12 +688,15 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
   const [category, setCategory] = useState<Category>(
     (CATEGORIES as readonly string[]).includes(project.category) ? (project.category as Category) : "Carousel"
   );
+<<<<<<< HEAD
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(project.cover_url || project.image_url || project.gallery_urls?.[0] || null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(project.pdf_url ?? null);
   const [videoUrl, setVideoUrl] = useState<string | null>(project.video_url ?? null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 
   const toggleFeatured = async () => {
     setBusy(true);
@@ -644,6 +709,7 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
 
   const save = async () => {
     setBusy(true);
+<<<<<<< HEAD
 
     try {
       const updates: Partial<Project> = { title, description, category };
@@ -730,6 +796,14 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
       setBusy(false);
       toast.error(err instanceof Error ? err.message : "Failed to update project");
     }
+=======
+    const { error } = await supabase.from("projects").update({ title, description, category }).eq("id", project.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Project updated");
+    setEditing(false);
+    onChange();
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
   };
 
   const remove = async () => {
@@ -753,7 +827,11 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
       )}
       <div className="flex-1 min-w-0">
         {editing ? (
+<<<<<<< HEAD
           <div className="space-y-4">
+=======
+          <div className="space-y-2">
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="input resize-none" />
             <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="input">
@@ -761,6 +839,7 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+<<<<<<< HEAD
 
             <FileDrop
               label="Cover Image"
@@ -790,6 +869,8 @@ function ProjectRow({ project, onChange }: { project: Project; onChange: () => v
                 previewUrl={videoUrl ?? undefined}
               />
             )}
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
           </div>
         ) : (
           <>

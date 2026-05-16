@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+<<<<<<< HEAD
 import Lightbox, { Item } from "@/components/Lightbox";
+=======
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
 import { CATEGORIES, type Category, type Project } from "@/lib/projects";
 
 export function MyWork() {
@@ -193,6 +196,7 @@ function ProjectCard({
 }
 
 function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
+<<<<<<< HEAD
   const [showPreview, setShowPreview] = useState(false);
   const [index, setIndex] = useState(0);
   const cover = project.cover_url || project.image_url || project.gallery_urls?.[0] || "";
@@ -377,6 +381,119 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         onIndexChange={(i) => setIndex(i)}
       />
     </>
+=======
+  const [showPdf, setShowPdf] = useState(false);
+  const cover =
+    project.cover_url || project.image_url || project.gallery_urls?.[0];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 cursor-zoom-out overflow-y-auto"
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative max-w-6xl w-full my-auto rounded-3xl overflow-hidden border border-border bg-card shadow-elegant cursor-default"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 h-10 w-10 rounded-full glass flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+
+        <div className="grid md:grid-cols-2 min-h-[60vh]">
+          {/* LEFT — cover hero */}
+          <div className="relative bg-background/60 flex items-center justify-center p-6 md:p-10 md:sticky md:top-0 md:self-start md:h-screen md:max-h-[90vh]">
+            <div className="absolute inset-0 bg-glow opacity-40 pointer-events-none" />
+            {cover ? (
+              <div className="relative w-full max-w-md aspect-[4/5] rounded-2xl overflow-hidden border border-border shadow-elegant glow-blue">
+                <img
+                  src={cover}
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-full aspect-[4/5] rounded-2xl bg-background/50 border border-border" />
+            )}
+          </div>
+
+          {/* RIGHT — details */}
+          <div className="p-8 md:p-12 flex flex-col justify-center gap-6">
+            <div>
+              <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-3">{project.category}</div>
+              <h3 className="text-3xl md:text-4xl font-display text-silver mb-5">{project.title}</h3>
+              {project.description && (
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm md:text-base">
+                  {project.description}
+                </p>
+              )}
+            </div>
+
+            {/* Media-specific viewer */}
+            {project.category === "Product Video Ads" && project.video_url && (
+              <video
+                src={project.video_url}
+                poster={project.cover_url ?? undefined}
+                controls
+                className="w-full rounded-xl border border-border bg-black max-h-[50vh]"
+              />
+            )}
+
+            {project.category === "Product Image Ads" && project.gallery_urls?.length > 0 && (
+              <Gallery urls={project.gallery_urls} title={project.title} />
+            )}
+
+            {project.category === "Carousel" && project.pdf_url && (
+              <div className="flex flex-col gap-3">
+                {showPdf ? (
+                  <object
+                    data={`${project.pdf_url}#view=FitH`}
+                    type="application/pdf"
+                    className="w-full h-[50vh] rounded-xl border border-border bg-black"
+                  >
+                    <a
+                      href={project.pdf_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary underline text-sm"
+                    >
+                      Open PDF in new tab
+                    </a>
+                  </object>
+                ) : null}
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setShowPdf((s) => !s)}
+                    className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                  >
+                    {showPdf ? "Hide Preview" : "Preview PDF"}
+                  </button>
+                  <a
+                    href={project.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-5 py-2.5 text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+                  >
+                    View Full PDF →
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+>>>>>>> e06519608011d5cd6d81a812fa2a2bf28aa7260c
   );
 }
 
